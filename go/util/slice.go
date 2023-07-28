@@ -16,3 +16,13 @@ func GetMaxIntInSlice(ints []int) (int, error) {
 
 	return max, nil
 }
+
+func GetIndexInSlice(slice []string, value string) (int, error) {
+	for i, v := range slice {
+		if v == value {
+			return i, nil
+		}
+	}
+
+	return 0, errors.New("value not found")
+}

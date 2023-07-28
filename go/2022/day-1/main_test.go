@@ -16,7 +16,7 @@ func TestGetMostCaloriesCarriedByElf(t *testing.T) {
 	got := getMostCaloriesCarriedByElf(getSortedCaloriesPerElf(data))
 
 	if got != want {
-		t.Errorf("got %q want %q", got, want)
+		t.Errorf("got %d want %d", got, want)
 	}
 }
 
