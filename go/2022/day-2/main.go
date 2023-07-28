@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,24 +16,9 @@ const LossScore = 0
 const DrawScore = 3
 const WinScore = 6
 
-const RockShapePlayer1 = "A"
-const PaperShapePlayer1 = "B"
-const ScissorsShapePlayer1 = "C"
-
-const RockShapePlayer2 = "X"
-const PaperShapePlayer2 = "Y"
-const ScissorsShapePlayer2 = "Z"
-
-const RockShape = "R"
-const PaperShape = "P"
-const ScissorsShape = "S"
-
-const UnknownShapeError = "unknown shape"
-
-type Turn struct {
-	Player1Move string
-	Player2Move string
-}
+var Wins = [3]string{"AY", "BZ", "CX"}
+var Draws = [3]string{"AX", "BY", "CZ"}
+var Losses = [3]string{"AZ", "BX", "CY"}
 
 func main() {
 	data, err := util.ReadFileAsString("./data.txt")
@@ -45,92 +31,65 @@ func main() {
 	fmt.Printf("Score: %d\n", score)
 }
 
-func getTurns(data string) []Turn {
-	turns := make([]Turn, 0)
-
+func getTurns(data string) []string {
+	turns := make([]string, 0)
 	for _, line := range strings.Split(data, "\n") {
 		if line == "" {
 			continue
 		}
 
 		moves := strings.Split(line, " ")
-		turn := Turn{
-			Player1Move: moves[0],
-			Player2Move: moves[1],
-		}
-		turns = append(turns, turn)
+		turns = append(turns, moves[0]+moves[1])
 	}
 
 	return turns
 }
 
-func getScore(turns []Turn) int {
+func getScore(turns []string) int {
 	totalScore := 0
 	for _, turn := range turns {
-		shapeScore := getShapeScore(turn.Player2Move)
-		roundScore := getRoundScore(turn)
+		shapeScore, err := getShapeScore(turn)
+		if err != nil {
+			panic(err)
+		}
+
+		roundScore, err := getRoundScore(turn)
+		if err != nil {
+			panic(err)
+		}
+
 		totalScore += shapeScore + roundScore
 	}
 
 	return totalScore
 }
 
-func getRoundScore(turn Turn) int {
-	shapes := []string{RockShape, PaperShape, ScissorsShape}
-	player1Index, err := util.GetIndexInSlice(shapes, castPlayer1ShapeToShape(turn.Player1Move))
-	if err != nil {
-		panic(err)
-	}
-
-	player2Index, err := util.GetIndexInSlice(shapes, castPlayer2ShapeToShape(turn.Player2Move))
-	if err != nil {
-		panic(err)
-	}
-
-	if player1Index == player2Index {
-		return DrawScore
-	}
-	if player1Index == player2Index-1 {
-		return LossScore
-	}
-	return WinScore
-}
-
-func getShapeScore(shape string) int {
-	switch shape {
-	case RockShapePlayer2:
-		return RockScore
-	case PaperShapePlayer2:
-		return PaperScore
-	case ScissorsShapePlayer2:
-		return ScissorsScore
+func getShapeScore(turn string) (int, error) {
+	move := turn[1:2]
+	switch move {
+	case "X":
+		return RockScore, nil
+	case "Y":
+		return PaperScore, nil
+	case "Z":
+		return ScissorsScore, nil
 	default:
-		panic(UnknownShapeError)
+		return 0, errors.New("unknown shape")
 	}
 }
 
-func castPlayer1ShapeToShape(player1Shape string) string {
-	switch player1Shape {
-	case RockShapePlayer1:
-		return RockShape
-	case PaperShapePlayer1:
-		return PaperShape
-	case ScissorsShapePlayer1:
-		return ScissorsShape
-	default:
-		panic(UnknownShapeError)
+func getRoundScore(turn string) (int, error) {
+	if util.IsValueInSlice(Wins[:], turn) {
+		return WinScore, nil
 	}
-}
 
-func castPlayer2ShapeToShape(player2Shape string) string {
-	switch player2Shape {
-	case RockShapePlayer2:
-		return RockShape
-	case PaperShapePlayer2:
-		return PaperShape
-	case ScissorsShapePlayer2:
-		return ScissorsShape
-	default:
-		panic(UnknownShapeError)
+	if util.IsValueInSlice(Draws[:], turn) {
+		return DrawScore, nil
 	}
+
+	if util.IsValueInSlice(Losses[:], turn) {
+		return LossScore, nil
+	}
+
+	return 0, errors.New("missing round score")
 }

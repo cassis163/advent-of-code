@@ -26,3 +26,13 @@ func GetIndexInSlice(slice []string, value string) (int, error) {
 
 	return 0, errors.New("value not found")
 }
+
+func IsValueInSlice(slice []string, value string) bool {
+	for _, v := range slice {
+		if v == value {
+			return true
+		}
+	}
+
+	return false
+}
