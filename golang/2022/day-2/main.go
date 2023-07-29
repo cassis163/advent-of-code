@@ -20,6 +20,18 @@ var Wins = [3]string{"AY", "BZ", "CX"}
 var Draws = [3]string{"AX", "BY", "CZ"}
 var Losses = [3]string{"AZ", "BX", "CY"}
 
+var InstructionsMap = map[string]string{
+	"AX": "AZ",
+	"AY": "AX",
+	"AZ": "AY",
+	"BX": "BX",
+	"BY": "BY",
+	"BZ": "BZ",
+	"CX": "CY",
+	"CY": "CZ",
+	"CZ": "CX",
+}
+
 func main() {
 	data, err := util.ReadFileAsString("./data.txt")
 	if err != nil {
@@ -29,6 +41,8 @@ func main() {
 	turns := getTurns(data)
 	score := getScoreForPartOne(turns)
 	fmt.Printf("Score (part 1): %d\n", score)
+	score2 := getScoreForPartTwo(turns)
+	fmt.Printf("Score (part 2): %d\n", score2)
 }
 
 func getTurns(data string) []string {
@@ -53,7 +67,7 @@ func getScoreForPartOne(turns []string) int {
 			panic(err)
 		}
 
-		roundScore, err := getRoundScoreForPartOne(turn)
+		roundScore, err := getRoundScore(turn)
 		if err != nil {
 			panic(err)
 		}
@@ -66,13 +80,14 @@ func getScoreForPartOne(turns []string) int {
 
 func getScoreForPartTwo(turns []string) int {
 	totalScore := 0
-	for _, turn := range turns {
+	for _, turnWithInstruction := range turns {
+		turn := upcastTurnWithInstruction(turnWithInstruction)
 		shapeScore, err := getShapeScore(turn)
 		if err != nil {
 			panic(err)
 		}
 
-		roundScore, err := getRoundScoreForPartTwo(turn)
+		roundScore, err := getRoundScore(turn)
 		if err != nil {
 			panic(err)
 		}
@@ -97,7 +112,7 @@ func getShapeScore(turn string) (int, error) {
 	}
 }
 
-func getRoundScoreForPartOne(turn string) (int, error) {
+func getRoundScore(turn string) (int, error) {
 	if util.IsValueInSlice(Wins[:], turn) {
 		return WinScore, nil
 	}
@@ -113,18 +128,6 @@ func getRoundScoreForPartOne(turn string) (int, error) {
 	return 0, errors.New("missing round score")
 }
 
-func getRoundScoreForPartTwo(turn string) (int, error) {
-	if util.IsValueInSlice(Wins[:], turn) {
-		return WinScore, nil
-	}
-
-	if util.IsValueInSlice(Draws[:], turn) {
-		return DrawScore, nil
-	}
-
-	if util.IsValueInSlice(Losses[:], turn) {
-		return LossScore, nil
-	}
-
-	return 0, errors.New("missing round score")
+func upcastTurnWithInstruction(turn string) string {
+	return InstructionsMap[turn[0:2]]
 }
