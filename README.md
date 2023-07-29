@@ -21,13 +21,13 @@ My solutions are probably inefficient, but screw that.. They are mine! :D
 * Kotlin (Java, but less painful?)
 * Scala (also Java, but less painful?)
 ## Languages that I'm OK with
-* Python
-* TS
-* JS
-* Java
-* Lua
-* PHP
-* C#
+* Python (incredible language, use it for data science and quick apps)
+* TS (makes the pain bearable)
+* JS (yep, unfortunately...)
+* Java (used it at work)
+* Lua (my first language and really proud of that, since it awesome ;) )
+* PHP (used it at work)
+* C# (used it in Unity 3D for a short while)
 ## Concepts that I want to learn
 * Macros (Rust)
 * Memory management (C, Rust)
