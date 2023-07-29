@@ -27,8 +27,8 @@ func main() {
 	}
 
 	turns := getTurns(data)
-	score := getScore(turns)
-	fmt.Printf("Score: %d\n", score)
+	score := getScoreForPartOne(turns)
+	fmt.Printf("Score (part 1): %d\n", score)
 }
 
 func getTurns(data string) []string {
@@ -45,7 +45,7 @@ func getTurns(data string) []string {
 	return turns
 }
 
-func getScore(turns []string) int {
+func getScoreForPartOne(turns []string) int {
 	totalScore := 0
 	for _, turn := range turns {
 		shapeScore, err := getShapeScore(turn)
@@ -53,7 +53,26 @@ func getScore(turns []string) int {
 			panic(err)
 		}
 
-		roundScore, err := getRoundScore(turn)
+		roundScore, err := getRoundScoreForPartOne(turn)
+		if err != nil {
+			panic(err)
+		}
+
+		totalScore += shapeScore + roundScore
+	}
+
+	return totalScore
+}
+
+func getScoreForPartTwo(turns []string) int {
+	totalScore := 0
+	for _, turn := range turns {
+		shapeScore, err := getShapeScore(turn)
+		if err != nil {
+			panic(err)
+		}
+
+		roundScore, err := getRoundScoreForPartTwo(turn)
 		if err != nil {
 			panic(err)
 		}
@@ -78,7 +97,23 @@ func getShapeScore(turn string) (int, error) {
 	}
 }
 
-func getRoundScore(turn string) (int, error) {
+func getRoundScoreForPartOne(turn string) (int, error) {
+	if util.IsValueInSlice(Wins[:], turn) {
+		return WinScore, nil
+	}
+
+	if util.IsValueInSlice(Draws[:], turn) {
+		return DrawScore, nil
+	}
+
+	if util.IsValueInSlice(Losses[:], turn) {
+		return LossScore, nil
+	}
+
+	return 0, errors.New("missing round score")
+}
+
+func getRoundScoreForPartTwo(turn string) (int, error) {
 	if util.IsValueInSlice(Wins[:], turn) {
 		return WinScore, nil
 	}
