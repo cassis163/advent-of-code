@@ -21,3 +21,19 @@ func TestPartOne(t *testing.T) {
 		t.Errorf("got %d, want %d", got, want)
 	}
 }
+
+func TestPartTwo(t *testing.T) {
+	data, err := util.ReadFileAsString("./test-data.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	assignmentPairs := getAssignmentPairs(data)
+
+	want := 4
+	got := getPartiallyOverlappingAssignmentsCount(assignmentPairs)
+
+	if want != got {
+		t.Errorf("got %d, want %d", got, want)
+	}
+}

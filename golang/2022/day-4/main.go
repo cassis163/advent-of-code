@@ -23,6 +23,34 @@ func main() {
 	count := getOverlappingAssignmentsCount(assignmentPairs)
 
 	fmt.Printf("There are %d overlapping assignments\n", count)
+
+	count = getPartiallyOverlappingAssignmentsCount(assignmentPairs)
+
+	fmt.Printf("There are %d partially overlapping assignments\n", count)
+}
+
+func getPartiallyOverlappingAssignmentsCount(assignmentPairs []AssignmentPair) int {
+	count := 0
+	for _, assignmentPair := range assignmentPairs {
+		if assignmentPairPartiallyOverlaps(assignmentPair) {
+			count++
+		}
+	}
+
+	return count
+}
+
+func assignmentPairPartiallyOverlaps(assignmentPair AssignmentPair) bool {
+	pairA := assignmentPair.assignmentsA
+	pairB := assignmentPair.assignmentsB
+
+	for _, assignmentA := range pairA {
+		if slices.Contains(pairB, assignmentA) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getOverlappingAssignmentsCount(assignmentPairs []AssignmentPair) int {
