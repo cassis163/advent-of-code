@@ -28,9 +28,9 @@ My solutions are probably inefficient, but screw that.. They are mine! :D
 * PHP
 * C#
 ## Concepts that I want to learn
-* Macros
+* Macros (Rust)
 * Memory management (C, Rust)
-* Borrowing (Rust)
+* Borrowing (Rust, not even a fanboy but genuinely curious as an outsider)
 * Null-safe abstractions (Rust)
 * Modern error handling (Go, Rust)
 * Parallel processing (Go, Rust)
