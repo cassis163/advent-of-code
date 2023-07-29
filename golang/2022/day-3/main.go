@@ -11,6 +11,14 @@ type Rucksack struct {
 	compartmentA, compartmentB string
 }
 
+func (r Rucksack) ContainsItemType(itemType string) bool {
+	return strings.Contains(r.compartmentA, itemType) || strings.Contains(r.compartmentB, itemType)
+}
+
+func (r Rucksack) getItemTypes() string {
+	return r.compartmentA + r.compartmentB
+}
+
 func main() {
 	data, err := util.ReadFileAsString("./data.txt")
 	if err != nil {
@@ -24,6 +32,51 @@ func main() {
 
 	fmt.Printf("Item types: %s\n", foundItemTypes)
 	fmt.Printf("Priority sum: %d\n", prioritySum)
+
+	groupedRucksacks := groupRucksacksInPairsOfThree(rucksacks)
+	badges := getBadges(groupedRucksacks)
+	badgesPrioritySum := getPrioritySum(badges)
+
+	fmt.Printf("Badges priority sum: %d\n", badgesPrioritySum)
+}
+
+func getBadges(groupedRucksacks [][]Rucksack) []string {
+	var badges []string
+	for _, rucksacks := range groupedRucksacks {
+		badge, err := getBadge(rucksacks)
+		if err != nil {
+			panic(err)
+		}
+
+		badges = append(badges, badge)
+	}
+
+	return badges
+}
+
+func getBadge(rucksackGroup []Rucksack) (string, error) {
+	rucksackA := rucksackGroup[0]
+	rucksackB := rucksackGroup[1]
+	rucksackC := rucksackGroup[2]
+
+	for _, itemTypeRune := range rucksackA.getItemTypes() {
+		itemType := string(itemTypeRune)
+		isBadge := rucksackB.ContainsItemType(itemType) && rucksackC.ContainsItemType(itemType)
+		if isBadge {
+			return itemType, nil
+		}
+	}
+
+	return "", fmt.Errorf("no badge found")
+}
+
+func groupRucksacksInPairsOfThree(rucksacks []Rucksack) [][]Rucksack {
+	var groupedRucksacks [][]Rucksack
+	for i := 0; i < len(rucksacks)-1; i += 3 {
+		groupedRucksacks = append(groupedRucksacks, rucksacks[i:i+3])
+	}
+
+	return groupedRucksacks
 }
 
 func getPrioritySum(itemTypes []string) int {

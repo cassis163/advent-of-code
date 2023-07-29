@@ -8,7 +8,7 @@ import (
 
 const ErrorMessage = "got %d want %d"
 
-func TestPart1(t *testing.T) {
+func TestPartOne(t *testing.T) {
 	data, err := util.ReadFileAsString("./test-data.txt")
 	if err != nil {
 		panic(err)
@@ -19,6 +19,24 @@ func TestPart1(t *testing.T) {
 
 	want := 157
 	got := getPrioritySum(foundItemTypes)
+
+	if got != want {
+		t.Errorf(ErrorMessage, got, want)
+	}
+}
+
+func TestPartTwo(t *testing.T) {
+	data, err := util.ReadFileAsString("./test-data.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	rucksacks := getRucksacks(data)
+	groupedRucksacks := groupRucksacksInPairsOfThree(rucksacks)
+	badges := getBadges(groupedRucksacks)
+
+	want := 70
+	got := getPrioritySum(badges)
 
 	if got != want {
 		t.Errorf(ErrorMessage, got, want)
