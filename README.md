@@ -20,6 +20,7 @@ My solutions are probably inefficient, but screw that.. They are mine! :D
 * Lisp (promises to be a very unique language, so I'm curious)
 * Kotlin (Java, but less painful?)
 * Scala (also Java, but less painful?)
+* Erlang (unique language, perhaps worth learning)
 ## Languages that I'm OK with
 * Python (incredible language, use it for data science and quick apps)
 * TS (makes the pain bearable)
