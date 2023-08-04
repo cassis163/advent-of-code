@@ -26,7 +26,7 @@ func PartOne(data string) string {
 
 	moves := getMovesFromData(data)
 	for _, move := range *moves {
-		supply.ApplyMove(move)
+		supply.ApplyCrateMover9000Move(move)
 	}
 
 	highestCrates := getHighestCrates(supply)
@@ -35,8 +35,18 @@ func PartOne(data string) string {
 	return highestCrates
 }
 
-func PartTwo(data string) {
+func PartTwo(data string) string {
+	supply := getSupplyFromData(data)
 
+	moves := getMovesFromData(data)
+	for _, move := range *moves {
+		supply.ApplyCrateMover9001Move(move)
+	}
+
+	highestCrates := getHighestCrates(supply)
+	fmt.Printf("Part two: %s\n", highestCrates)
+
+	return highestCrates
 }
 
 type Move struct {
@@ -53,7 +63,9 @@ type Stack struct {
 	crates []string
 }
 
-func (s *Supply) Move(fromStackIndex int, toStackIndex int, amount int) {
+func (s *Supply) MoveWithCrateMover9000(fromStackIndex int, toStackIndex int, amount int) {
+	// Move one crate at a time
+
 	fromStack := s.stacks[fromStackIndex]
 	toStack := s.stacks[toStackIndex]
 	for i := 0; i < amount; i++ {
@@ -66,8 +78,26 @@ func (s *Supply) Move(fromStackIndex int, toStackIndex int, amount int) {
 	s.stacks[toStackIndex] = toStack
 }
 
-func (s *Supply) ApplyMove(move Move) {
-	s.Move(move.fromStackIndex-1, move.toStackIndex-1, move.amount)
+func (s *Supply) ApplyCrateMover9000Move(move Move) {
+	s.MoveWithCrateMover9000(move.fromStackIndex-1, move.toStackIndex-1, move.amount)
+}
+
+func (s *Supply) MoveWithCrateMover9001(fromStackIndex int, toStackIndex int, amount int) {
+	// Move all crates at once
+
+	fromStack := s.stacks[fromStackIndex]
+	toStack := s.stacks[toStackIndex]
+
+	crates := fromStack.crates[len(fromStack.crates)-amount:]
+	toStack.crates = append(toStack.crates, crates...)
+	fromStack.crates = fromStack.crates[:len(fromStack.crates)-amount]
+
+	s.stacks[fromStackIndex] = fromStack
+	s.stacks[toStackIndex] = toStack
+}
+
+func (s *Supply) ApplyCrateMover9001Move(move Move) {
+	s.MoveWithCrateMover9001(move.fromStackIndex-1, move.toStackIndex-1, move.amount)
 }
 
 func (s *Supply) AddCrateToStack(crate string, stackIndex int) {

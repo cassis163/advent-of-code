@@ -20,5 +20,14 @@ func TestPartOne(t *testing.T) {
 }
 
 func TestPartTwo(t *testing.T) {
+	data, err := util.ReadFileAsString("./test-data.txt")
+	if err != nil {
+		panic(err)
+	}
 
+	got := PartTwo(data)
+	want := "MCD"
+	if got != want {
+		t.Errorf("PartTwo(data) = %s; want %s", got, want)
+	}
 }
