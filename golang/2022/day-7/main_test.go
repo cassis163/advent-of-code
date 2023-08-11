@@ -13,8 +13,8 @@ func TestPartOne(t *testing.T) {
 	}
 
 	got := PartOne(data)
-	want := "95437"
+	want := 95437
 	if got != want {
-		t.Errorf("PartOne(data) = %s; want %s", got, want)
+		t.Errorf("PartOne(data) = %b; want %b", got, want)
 	}
 }
