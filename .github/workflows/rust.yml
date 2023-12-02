@@ -1,24 +1,21 @@
 name: Rust
 
 on:
-  # Run on any PR
-  pull_request:
+  push:
+    branches: [main]
 
 jobs:
   check:  # Any action can contain multiple jobs
     runs-on: ubuntu-latest  # OS on which the job runs
     steps:  # Each job consists in a series of steps
-    - name: Navigate to rust files
-      run: cd rust
-
     - name: Checkout  # Clone git repository
       uses: actions/checkout@v3
 
     - name: Install stable toolchain
       uses: dtolnay/rust-toolchain@stable
 
-    - name: Check that code can compile
-      run: cargo check  # Run the `cargo check` command
+    - name: Test 2021
+      run: cd rust/2021 && cargo test
 
-    - name: Test
-      run: cargo test
+    - name: Test 2023
+      run: cd rust/2023 && cargo test
