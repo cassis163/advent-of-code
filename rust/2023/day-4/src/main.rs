@@ -3,18 +3,20 @@ use std::fs;
 use regex::Regex;
 
 struct Card {
-    // id: u32,
+    id: u32,
     winning_numbers: Vec<u32>,
     owned_numbers: Vec<u32>,
 }
 
 impl Card {
-    fn get_value(&self) -> u32 {
-        self.winning_numbers.iter().fold(0, |acc, n| {
-            if !self.owned_numbers.contains(n) {
-                return acc;
-            }
+    fn get_matches(&self) -> Vec<&u32> {
+        self.winning_numbers.iter().filter(|n| {
+            self.owned_numbers.contains(n)
+        }).collect::<Vec<&u32>>()
+    }
 
+    fn get_value(&self) -> u32 {
+        self.get_matches().iter().fold(0, |acc, n| {
             match acc {
                 0 => 1,
                 _ => acc * 2,
@@ -29,6 +31,9 @@ fn main() {
 
     let total_points: u32 = get_total_points(&sanitized_input);
     println!("Total points of cards is {}", total_points);
+
+    let cards_count = get_cards_count(&sanitized_input);
+    println!("Count of cards is {}", cards_count);
 }
 
 fn sanitize_input(input: &String) -> String {
@@ -40,6 +45,18 @@ fn extract_numbers(input: &str) -> Vec<u32> {
     re.captures_iter(input).map(|c| c.extract::<1>()).map(|c| {
         c.0.parse::<u32>().unwrap()
     }).collect()
+}
+
+fn get_cards_count(input: &String) -> u32 {
+    let cards = get_cards_from_input(input);
+    let get_card_by_id = |id| -> &Card {
+        let cards = cards.iter().filter(|card| card.id == id).collect::<Vec<&Card>>();
+        cards.first().expect("Failed to find card with id")
+    };
+
+    let obtained_cards = cards.iter().flat_map(|card| {
+        cards.
+    });
 }
 
 fn get_total_points(input: &String) -> u32 {
@@ -57,12 +74,12 @@ fn get_cards_from_input(input: &String) -> Vec<Card> {
 
             let card_and_number_halves: Vec<&str> = line.split(":").collect();
 
-            // let card_half = card_and_number_halves
-            //     .get(0)
-            //     .expect("Card half is not present");
-            // let card_id = *extract_numbers(&card_half)
-            //     .first()
-            //     .expect("Failed to find card ID");
+            let card_half = card_and_number_halves
+                .get(0)
+                .expect("Card half is not present");
+            let card_id = *extract_numbers(&card_half)
+                .first()
+                .expect("Failed to find card ID");
 
             let numbers_half = card_and_number_halves
                 .get(1)
@@ -79,7 +96,7 @@ fn get_cards_from_input(input: &String) -> Vec<Card> {
             let owned_numbers = extract_numbers(&owned_numbers);
 
             Some(Card {
-                // id: card_id,
+                id: card_id,
                 winning_numbers,
                 owned_numbers,
             })
@@ -89,7 +106,7 @@ fn get_cards_from_input(input: &String) -> Vec<Card> {
 
 #[cfg(test)]
 mod tests {
-    use crate::get_total_points;
+    use crate::{get_total_points, get_cards_count};
 
     #[test]
     fn test_get_total_points() {
@@ -106,6 +123,23 @@ mod tests {
 
         let actual = get_total_points(&input);
         let expected = 13;
+        assert_eq!(actual, expected);
+    }
+
+    fn test_get_cards_count() {
+        let input = String::from(
+            "
+            Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53\n
+            Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19\n
+            Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1\n
+            Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83\n
+            Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36\n
+            Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
+            ",
+        );
+
+        let actual = get_cards_count(&input);
+        let expected = 30;
         assert_eq!(actual, expected);
     }
 }
