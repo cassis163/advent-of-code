@@ -1,4 +1,4 @@
-use std::fs;
+use std::{cmp, collections::HashMap, fs};
 
 use regex::Regex;
 
@@ -10,17 +10,16 @@ struct Card {
 
 impl Card {
     fn get_matches(&self) -> Vec<&u32> {
-        self.winning_numbers.iter().filter(|n| {
-            self.owned_numbers.contains(n)
-        }).collect::<Vec<&u32>>()
+        self.winning_numbers
+            .iter()
+            .filter(|n| self.owned_numbers.contains(n))
+            .collect::<Vec<&u32>>()
     }
 
     fn get_value(&self) -> u32 {
-        self.get_matches().iter().fold(0, |acc, n| {
-            match acc {
-                0 => 1,
-                _ => acc * 2,
-            }
+        self.get_matches().iter().fold(0, |acc, _| match acc {
+            0 => 1,
+            _ => acc * 2,
         })
     }
 }
@@ -42,21 +41,30 @@ fn sanitize_input(input: &String) -> String {
 
 fn extract_numbers(input: &str) -> Vec<u32> {
     let re = Regex::new(r"(\d+)").unwrap();
-    re.captures_iter(input).map(|c| c.extract::<1>()).map(|c| {
-        c.0.parse::<u32>().unwrap()
-    }).collect()
+    re.captures_iter(input)
+        .map(|c| c.extract::<1>())
+        .map(|c| c.0.parse::<u32>().unwrap())
+        .collect()
 }
 
 fn get_cards_count(input: &String) -> u32 {
     let cards = get_cards_from_input(input);
-    let get_card_by_id = |id| -> &Card {
-        let cards = cards.iter().filter(|card| card.id == id).collect::<Vec<&Card>>();
-        cards.first().expect("Failed to find card with id")
-    };
+    let mut copies: HashMap<u32, u32> = cards.iter().map(|card| (card.id, 1)).collect();
+    for (i, card) in cards.iter().enumerate() {
+        let weight: u32 = match copies.get(&card.id) {
+            Some(weight) => *weight,
+            None => 1,
+        };
+        let start = cmp::min(i + 1, cards.len());
+        let end = start + card.get_matches().len();
+        let obtained_cards: Vec<&Card> = cards[start..end].iter().collect();
+        for obtained_card in obtained_cards {
+            let value = copies.get_mut(&obtained_card.id).unwrap();
+            *value += weight;
+        }
+    }
 
-    let obtained_cards = cards.iter().flat_map(|card| {
-        cards.
-    });
+    copies.into_iter().map(|(_, v)| v).sum()
 }
 
 fn get_total_points(input: &String) -> u32 {
@@ -68,7 +76,7 @@ fn get_cards_from_input(input: &String) -> Vec<Card> {
     input
         .lines()
         .filter_map(|line| {
-            if line.trim().is_empty()  {
+            if line.trim().is_empty() {
                 return None;
             }
 
@@ -106,39 +114,27 @@ fn get_cards_from_input(input: &String) -> Vec<Card> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{get_total_points, get_cards_count};
+    use crate::{get_cards_count, get_total_points};
 
-    #[test]
-    fn test_get_total_points() {
-        let input = String::from(
-            "
+    const INPUT: &str = "
             Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53\n
             Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19\n
             Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1\n
             Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83\n
             Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36\n
             Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
-            ",
-        );
+            ";
 
-        let actual = get_total_points(&input);
+    #[test]
+    fn test_get_total_points() {
+        let actual = get_total_points(&INPUT.to_string());
         let expected = 13;
         assert_eq!(actual, expected);
     }
 
+    #[test]
     fn test_get_cards_count() {
-        let input = String::from(
-            "
-            Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53\n
-            Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19\n
-            Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1\n
-            Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83\n
-            Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36\n
-            Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
-            ",
-        );
-
-        let actual = get_cards_count(&input);
+        let actual = get_cards_count(&INPUT.to_string());
         let expected = 30;
         assert_eq!(actual, expected);
     }
