@@ -25,8 +25,8 @@ impl Mapping {
                 let delta = source - self.source_start;
                 let value = self.dest_start + delta;
                 Some(value)
-            },
-            false => None
+            }
+            false => None,
         }
     }
 }
@@ -45,10 +45,16 @@ impl<'a> SeedingPlan<'a> {
 }
 
 impl<'a> Almanac<'a> {
-    fn get_seeding_plan(&self, source_name: &str, dest_name: &str) -> Result<&SeedingPlan, &'static str> {
-        let plans = self.plans.iter().filter(|plan| {
-            plan.name == format!("{}-to-{}", source_name, dest_name)
-        }).collect::<Vec<&SeedingPlan>>();
+    fn get_seeding_plan(
+        &self,
+        source_name: &str,
+        dest_name: &str,
+    ) -> Result<&SeedingPlan, &'static str> {
+        let plans = self
+            .plans
+            .iter()
+            .filter(|plan| plan.name == format!("{}-to-{}", source_name, dest_name))
+            .collect::<Vec<&SeedingPlan>>();
 
         if plans.len() > 1 {
             return Err("More than one seeding plan found");
@@ -64,25 +70,88 @@ fn main() {
     let sanitized_input = input.trim().to_string();
     let almanac = deserialize_input(&sanitized_input);
 
-    let lowest_soil_number = get_lowest_soil_number(&almanac).unwrap();
+    let lowest_soil_number = get_lowest_soil_number_part_one(&almanac).unwrap();
     println!("Lowest soil number is {}", lowest_soil_number);
+
+    let lowest_soil_number_part_two = get_lowest_soil_number_part_two(&almanac).unwrap();
+    println!("Lowest soil number is {} (part two)", lowest_soil_number_part_two);
 }
 
-fn get_lowest_soil_number(almanac: &Almanac) -> Result<u64, &'static str> {
+fn get_lowest_soil_number_part_one(almanac: &Almanac) -> Result<u64, &'static str> {
     let mut locations: Vec<u64> = vec![];
     for seed in almanac.seeds.iter() {
-        let soil = almanac.get_seeding_plan("seed", "soil")?.get_destination(*seed);
-        let fertilizer = almanac.get_seeding_plan("soil", "fertilizer")?.get_destination(soil);
-        let water = almanac.get_seeding_plan("fertilizer", "water")?.get_destination(fertilizer);
-        let light = almanac.get_seeding_plan("water", "light")?.get_destination(water);
-        let temperature = almanac.get_seeding_plan("light", "temperature")?.get_destination(light);
-        let humidity = almanac.get_seeding_plan("temperature", "humidity")?.get_destination(temperature);
-        let location = almanac.get_seeding_plan("humidity", "location")?.get_destination(humidity);
-        locations.push(location);
+        let soil_number = get_soil_number(almanac, *seed)?;
+        locations.push(soil_number);
     }
 
-    let min = locations.iter().min().ok_or("Failed to get the lowest value")?;
+    let min = locations
+        .iter()
+        .min()
+        .ok_or("Failed to get the lowest value")?;
     Ok(*min)
+}
+
+fn get_lowest_soil_number_part_two(almanac: &Almanac) -> Result<u64, &'static str> {
+    let seed_pairs = get_seed_pairs(almanac);
+
+    let mut locations: Vec<u64> = vec![];
+    for (start_seed, range) in seed_pairs.iter() {
+        let seeds = **start_seed..(*start_seed + *range);
+        for seed in seeds {
+            let soil_number = get_soil_number(almanac, seed)?;
+            locations.push(soil_number);
+        }
+    }
+
+    let min = locations
+        .iter()
+        .min()
+        .ok_or("Failed to get the lowest value")?;
+    Ok(*min)
+}
+
+fn get_seed_pairs<'a>(almanac: &'a Almanac) -> Vec<(&'a u64, &'a u64)> {
+    almanac
+        .seeds
+        .iter()
+        .enumerate()
+        .filter_map(|(i, seed)| {
+            if (i + 1) % 2 == 0 {
+                return None;
+            }
+
+            let next_seed = almanac
+                .seeds
+                .get(i + 1)
+                .expect("Failed to get second seed in pair");
+            Some((seed, next_seed))
+        })
+        .collect()
+}
+
+fn get_soil_number(almanac: &Almanac, seed: u64) -> Result<u64, &'static str> {
+    let soil = almanac
+        .get_seeding_plan("seed", "soil")?
+        .get_destination(seed);
+    let fertilizer = almanac
+        .get_seeding_plan("soil", "fertilizer")?
+        .get_destination(soil);
+    let water = almanac
+        .get_seeding_plan("fertilizer", "water")?
+        .get_destination(fertilizer);
+    let light = almanac
+        .get_seeding_plan("water", "light")?
+        .get_destination(water);
+    let temperature = almanac
+        .get_seeding_plan("light", "temperature")?
+        .get_destination(light);
+    let humidity = almanac
+        .get_seeding_plan("temperature", "humidity")?
+        .get_destination(temperature);
+    let location = almanac
+        .get_seeding_plan("humidity", "location")?
+        .get_destination(humidity);
+    Ok(location)
 }
 
 fn deserialize_input(sanitized_input: &String) -> Almanac {
@@ -92,41 +161,40 @@ fn deserialize_input(sanitized_input: &String) -> Almanac {
     let seeds = get_numbers(&seeds_str.to_string());
 
     let map_groups = groups[1..].to_vec();
-    let plans: Vec<SeedingPlan> = map_groups.iter().map(|map_group| {
-        let lines = map_group.lines().collect::<Vec<&str>>();
-        let name_line = lines.get(0).unwrap();
-        let name = get_name(name_line).expect("Failed to get name");
+    let plans: Vec<SeedingPlan> = map_groups
+        .iter()
+        .map(|map_group| {
+            let lines = map_group.lines().collect::<Vec<&str>>();
+            let name_line = lines.get(0).unwrap();
+            let name = get_name(name_line).expect("Failed to get name");
 
-        let number_lines = lines[1..].iter().collect::<Vec<&&str>>();
-        let mappings: Vec<Mapping> = number_lines.iter().map(|line| {
-            let numbers = get_numbers(&line.to_string());
-            let dest_start = numbers.get(0).expect("Failed to get destination start");
-            let source_start = numbers.get(1).expect("Failed to get source start");
-            let range = numbers.get(2).expect("Failed to get range");
+            let number_lines = lines[1..].iter().collect::<Vec<&&str>>();
+            let mappings: Vec<Mapping> = number_lines
+                .iter()
+                .map(|line| {
+                    let numbers = get_numbers(&line.to_string());
+                    let dest_start = numbers.get(0).expect("Failed to get destination start");
+                    let source_start = numbers.get(1).expect("Failed to get source start");
+                    let range = numbers.get(2).expect("Failed to get range");
 
-            Mapping {
-                dest_start: *dest_start,
-                range: *range,
-                source_start: *source_start,
-            }
-        }).collect();
+                    Mapping {
+                        dest_start: *dest_start,
+                        range: *range,
+                        source_start: *source_start,
+                    }
+                })
+                .collect();
 
-        SeedingPlan {
-            name,
-            mappings,
-        }
-    }).collect();
+            SeedingPlan { name, mappings }
+        })
+        .collect();
 
-    Almanac {
-        seeds,
-        plans,
-    }
+    Almanac { seeds, plans }
 }
 
 fn get_name(s: &str) -> Option<&str> {
     let re = Regex::new(r"\b(\w+-to-\w+)\b").unwrap();
-    re
-        .captures_iter(s)
+    re.captures_iter(s)
         .map(|c| c.extract::<1>().0)
         .collect::<Vec<&str>>()
         .first()
@@ -135,8 +203,7 @@ fn get_name(s: &str) -> Option<&str> {
 
 fn get_numbers(s: &String) -> Vec<u64> {
     let re = Regex::new(r"(\d+)").unwrap();
-    re
-        .captures_iter(s)
+    re.captures_iter(s)
         .map(|c| {
             let value = c.extract::<1>().0;
             value.parse::<u64>().unwrap()
@@ -146,7 +213,9 @@ fn get_numbers(s: &String) -> Vec<u64> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{deserialize_input, get_lowest_soil_number};
+    use crate::{
+        deserialize_input, get_lowest_soil_number_part_one, get_lowest_soil_number_part_two,
+    };
 
     const INPUT: &str = "
         seeds: 79 14 55 13
@@ -185,12 +254,22 @@ mod tests {
     ";
 
     #[test]
-    fn test() {
+    fn test_get_lowest_soil_number_part_one() {
         let sanitized_input = INPUT.trim().to_string();
         let almanac = deserialize_input(&sanitized_input);
 
-        let actual = get_lowest_soil_number(&almanac).unwrap();
+        let actual = get_lowest_soil_number_part_one(&almanac).unwrap();
         let expected: u64 = 35;
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_get_lowest_soil_number_part_two() {
+        let sanitized_input = INPUT.trim().to_string();
+        let almanac = deserialize_input(&sanitized_input);
+
+        let actual = get_lowest_soil_number_part_two(&almanac).unwrap();
+        let expected: u64 = 46;
         assert_eq!(actual, expected);
     }
 }
