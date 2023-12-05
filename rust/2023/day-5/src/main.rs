@@ -29,6 +29,20 @@ impl Mapping {
             false => None,
         }
     }
+
+    fn get_interval_destination(&self, (source_start, source_end): (u64, u64)) -> (u64, u64) {
+        let start = self.get_destination(source_start).unwrap_or(source_start);
+        let end = self.get_destination(source_end).unwrap_or(source_end);
+
+        if source_start >= self.source_start && source_end <= self.source_start + self.range {
+            let point = self.get_destination(self.source_start).unwrap();
+            if point > start {
+                return (point, end);
+            }
+        }
+
+        (start, end)
+    }
 }
 
 impl<'a> SeedingPlan<'a> {
@@ -41,6 +55,17 @@ impl<'a> SeedingPlan<'a> {
         }
 
         source
+    }
+
+    fn get_interval_destination(&self, (source_start, source_end): (u64, u64)) -> (u64, u64) {
+        let (mut start, mut end): (u64, u64) = (source_start, source_end);
+        for mapping in &self.mappings {
+            let (new_start, new_end) = mapping.get_interval_destination((source_start, source_end));
+            start = new_start;
+            end = new_end;
+        }
+
+        (start, end)
     }
 }
 
@@ -94,23 +119,23 @@ fn get_lowest_soil_number_part_one(almanac: &Almanac) -> Result<u64, &'static st
 fn get_lowest_soil_number_part_two(almanac: &Almanac) -> Result<u64, &'static str> {
     let seed_pairs = get_seed_pairs(almanac);
 
-    let mut locations: Vec<u64> = vec![];
+    let mut locations: Vec<(u64, u64)> = vec![];
     for (start_seed, range) in seed_pairs.iter() {
-        let seeds = **start_seed..(*start_seed + *range);
-        for seed in seeds {
-            let soil_number = get_soil_number(almanac, seed)?;
-            locations.push(soil_number);
-        }
+        let start = *start_seed;
+        let end = start + range;
+        let interval = get_soil_interval(almanac, (start, end))?;
+        locations.push(interval);
     }
 
     let min = locations
         .iter()
+        .flat_map(|interval| [interval.0, interval.1])
         .min()
         .ok_or("Failed to get the lowest value")?;
-    Ok(*min)
+    Ok(min)
 }
 
-fn get_seed_pairs<'a>(almanac: &'a Almanac) -> Vec<(&'a u64, &'a u64)> {
+fn get_seed_pairs<'a>(almanac: &'a Almanac) -> Vec<(u64, u64)> {
     almanac
         .seeds
         .iter()
@@ -124,7 +149,7 @@ fn get_seed_pairs<'a>(almanac: &'a Almanac) -> Vec<(&'a u64, &'a u64)> {
                 .seeds
                 .get(i + 1)
                 .expect("Failed to get second seed in pair");
-            Some((seed, next_seed))
+            Some((*seed, *next_seed))
         })
         .collect()
 }
@@ -151,6 +176,31 @@ fn get_soil_number(almanac: &Almanac, seed: u64) -> Result<u64, &'static str> {
     let location = almanac
         .get_seeding_plan("humidity", "location")?
         .get_destination(humidity);
+    Ok(location)
+}
+
+fn get_soil_interval(almanac: &Almanac, seed_interval: (u64, u64)) -> Result<(u64, u64), &'static str> {
+    let soil = almanac
+        .get_seeding_plan("seed", "soil")?
+        .get_interval_destination(seed_interval);
+    let fertilizer = almanac
+        .get_seeding_plan("soil", "fertilizer")?
+        .get_interval_destination(soil);
+    let water = almanac
+        .get_seeding_plan("fertilizer", "water")?
+        .get_interval_destination(fertilizer);
+    let light = almanac
+        .get_seeding_plan("water", "light")?
+        .get_interval_destination(water);
+    let temperature = almanac
+        .get_seeding_plan("light", "temperature")?
+        .get_interval_destination(light);
+    let humidity = almanac
+        .get_seeding_plan("temperature", "humidity")?
+        .get_interval_destination(temperature);
+    let location = almanac
+        .get_seeding_plan("humidity", "location")?
+        .get_interval_destination(humidity);
     Ok(location)
 }
 
